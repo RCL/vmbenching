@@ -37,64 +37,56 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, const char* argv[])
 {
-	struct timespec TimeSpec, TimeSpecRemain;
-	unsigned long long StartNs = 0, EndNs = 0, DiffNs = 0;
+	struct timespec TimeSpec;
+	unsigned long long ResolutionNs = 0, PrevNs = 0, CurrentNs = 0;
+	unsigned long long DiffNs = 0;
+	const unsigned long long ThresholdNs = 100000000;	// 100 ms
 	time_t Time;
 	struct tm* UtcTime;
-	int SleepResult = 0;
+	int Cooldown = 2;	/* skip first two readings */
 
-	printf("Checking if we ever overshoot clock_nanosleep() for too long (program never exits).\n");
+	clock_getres(CLOCK_MONOTONIC_RAW, &TimeSpec);
+	ResolutionNs = (unsigned long long)(TimeSpec.tv_sec) * 1000000000ULL + (unsigned long long)(TimeSpec.tv_nsec);
+
+	printf("Resolution of CLOCK_MONOTONIC_RAW is %llu nsec\n", ResolutionNs);
+
+	clock_gettime(CLOCK_MONOTONIC_RAW, &TimeSpec);
+	PrevNs = (unsigned long long)(TimeSpec.tv_sec) * 1000000000ULL + (unsigned long long)(TimeSpec.tv_nsec);
+
+	printf("Checking if we ever see too large difference between clock readings (program never exits)\n");
 
 	for (;;)
 	{
 		clock_gettime(CLOCK_MONOTONIC_RAW, &TimeSpec);
-		StartNs = (unsigned long long)(TimeSpec.tv_sec) * 1000000000ULL + (unsigned long long)(TimeSpec.tv_nsec);
+		CurrentNs = (unsigned long long)(TimeSpec.tv_sec) * 1000000000ULL + (unsigned long long)(TimeSpec.tv_nsec);
 
-		TimeSpec.tv_sec = 0;
-		TimeSpec.tv_nsec = 33000000;
-		for (;;)
+		DiffNs = CurrentNs - PrevNs;
+
+		if (Cooldown == 0)
 		{
-			SleepResult = clock_nanosleep(CLOCK_MONOTONIC, 0, &TimeSpec, &TimeSpecRemain);
-			if (SleepResult == 0)
-			{
-				break;
-			}
-			else if (SleepResult != EINTR)
+			/* Check if we're ever too far off (larger than threshold) */
+			if (DiffNs > ThresholdNs)
 			{
 				Time = time(NULL);
 				UtcTime = gmtime(&Time);
-				
-				printf("pid %d: clock_nanosleep() failed with %d (%s) at %s",
+			
+				printf("pid %d: too large difference between clock readings, %llu nsec (largest tolerable difference is %llu nsec) at %s",
 					getpid(),
-					SleepResult,
-					strerror(SleepResult),
+					DiffNs, ThresholdNs,
 					asctime(UtcTime)
 				);
 
-				exit(1);
+				Cooldown = 2;	/* skip next two readings because printing off the result might have taken too long. */
 			}
-
-			// got interrupted, repeat
-			memcpy(&TimeSpec, &TimeSpecRemain, sizeof(TimeSpec));
 		}
-	
-		clock_gettime(CLOCK_MONOTONIC_RAW, &TimeSpec);
-		EndNs = (unsigned long long)(TimeSpec.tv_sec) * 1000000000ULL + (unsigned long long)(TimeSpec.tv_nsec);
-
-		DiffNs = EndNs - StartNs;
-
-		if (DiffNs > 100000000)	/* if instead of 33 ms it took more than 100 ms, something is really wrong */
+		else
 		{
-			Time = time(NULL);
-			UtcTime = gmtime(&Time);
+			--Cooldown;
+		}
 
-			printf( "pid %d: clock_nanosleep() took %llu nanoseconds instead of 33000000, at %s",
-				getpid(),
-				DiffNs,
-				asctime(UtcTime)
-			);
-		}		
+		PrevNs = CurrentNs;
 	}
 
 	return 0;
 };
+
