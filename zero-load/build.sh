@@ -1,4 +1,4 @@
 #!/bin/sh
 
-gcc -O2 zero_load.c -o zero_load
+gcc -O2 zero_load.c -lrt -o zero_load
 
