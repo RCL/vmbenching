@@ -40,15 +40,23 @@ int main(int argc, const char* argv[])
 	struct timespec TimeSpec;
 	unsigned long long ResolutionNs = 0, PrevNs = 0, CurrentNs = 0;
 	unsigned long long DiffNs = 0;
-	const unsigned long long ThresholdNs = 100000000;	// 100 ms
+	unsigned long long ThresholdNs = 100000000;	// 100 ms
 	time_t Time;
 	struct tm* UtcTime;
 	int Cooldown = 2;	/* skip first two readings */
 
+	/* Read threshold in millseconds from commandline, if any */
+	if (argc > 1)
+	{
+		ThresholdNs = atol(argv[1]) * 1000000;
+	}
+
 	clock_getres(CLOCK_MONOTONIC_RAW, &TimeSpec);
 	ResolutionNs = (unsigned long long)(TimeSpec.tv_sec) * 1000000000ULL + (unsigned long long)(TimeSpec.tv_nsec);
 
-	printf("Resolution of CLOCK_MONOTONIC_RAW is %llu nsec\n", ResolutionNs);
+	printf("%d: Resolution of CLOCK_MONOTONIC_RAW is %llu nsec\n", getpid(), ResolutionNs);
+
+	printf("%d: Largest tolerable difference between clock readings is %llu nsec (%llu ms)\n", getpid(), ThresholdNs, ThresholdNs / 1000000);
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &TimeSpec);
 	PrevNs = (unsigned long long)(TimeSpec.tv_sec) * 1000000000ULL + (unsigned long long)(TimeSpec.tv_nsec);
