@@ -44,7 +44,7 @@ struct StabilityParams
 	double Min, Max;
 };
 
-/** Updates values */
+/** Updates state of an online std dev calculation. */
 void UpdateObservation(struct StabilityParams* Params, double Value)
 {
 	double Delta;
@@ -68,7 +68,7 @@ void UpdateObservation(struct StabilityParams* Params, double Value)
 	}
 }
 
-/** Print values */
+/** Calculates values and prints them. */
 void PrintValues(struct StabilityParams* Params)
 {
 	double Variance = 0, StandardDeviation = 0, RelativeStdDev = 0;
@@ -84,7 +84,7 @@ void PrintValues(struct StabilityParams* Params)
 		}
 	}
 
-	printf("Min(ns), %.1f, Max(ns), %1.f, Mean(ns), %.1f, StdDev(ns), %.1f, RelStdDev(%%), %.1f, DataSize(M), %.f", 
+	printf("Min(ns), %.1f, Max(ns), %.1f, Mean(ns), %.1f, StdDev(ns), %.1f, RelStdDev(%%), %.1f, DataSize(M), %.f", 
 		Params->Min, Params->Max, Params->Mean, StandardDeviation, RelativeStdDev, Params->NumObservations / 1000000);
 }
 
