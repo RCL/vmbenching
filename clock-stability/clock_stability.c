@@ -41,6 +41,7 @@ struct StabilityParams
 {
 	double NumObservations;
 	double Mean, Mean2;
+	double Min, Max;
 };
 
 /** Updates values */
@@ -54,20 +55,37 @@ void UpdateObservation(struct StabilityParams* Params, double Value)
 
 	Params->Mean += Delta / Params->NumObservations;
 	Params->Mean2 += Delta * (Value - Params->Mean);
+
+	if (Params->NumObservations > 1)
+	{
+		Params->Min = (Value < Params->Min) ? Value : Params->Min;
+		Params->Max = (Value > Params->Max) ? Value : Params->Max;
+	}
+	else
+	{
+		Params->Min = Value;
+		Params->Max = Value;
+	}
 }
 
 /** Print values */
 void PrintValues(struct StabilityParams* Params)
 {
-	double Variance = 0, StandardDeviation = 0;
+	double Variance = 0, StandardDeviation = 0, RelativeStdDev = 0;
 
 	if (Params->NumObservations > 1)
 	{
 		Variance = Params->Mean2 / (Params->NumObservations - 1);
 		StandardDeviation = sqrt( Variance );
+
+		if (Params->Mean * Params->Mean > 0.0001)
+		{
+			RelativeStdDev = 100.0 * StandardDeviation / Params->Mean;
+		}
 	}
 
-	printf("Mean: %.1f ns StandardDeviation: %.1f ns NumObservations: %.fM", Params->Mean, StandardDeviation, Params->NumObservations / 1000000);
+	printf("Min(ns), %.1f, Max(ns), %1.f, Mean(ns), %.1f, StdDev(ns), %.1f, RelStdDev(%%), %.1f, DataSize(M), %.f", 
+		Params->Min, Params->Max, Params->Mean, StandardDeviation, RelativeStdDev, Params->NumObservations / 1000000);
 }
 
 
@@ -122,11 +140,11 @@ int main(int argc, const char* argv[])
 				Time = time(NULL);
 				UtcTime = gmtime(&Time);
 			
-				printf("pid %d: AllTime: ", getpid());
+				printf("pid, %d, All time, ", getpid());
 				PrintValues(&AllTime);
-				printf("   Period: " );
+				printf(", Period, " );
 				PrintValues(&LastPeriod);
-				printf(" at %s", asctime(UtcTime));
+				printf(", %s", asctime(UtcTime));
 				fflush(stdout);
 
 				memset(&LastPeriod, 0, sizeof(LastPeriod));
