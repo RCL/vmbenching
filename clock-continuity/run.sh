@@ -26,19 +26,19 @@ RunForever()
 	while true; do
 		kill -0 $TESTPID100 > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
-			echo "pid %TESTPID exited"
+			echo "pid %TESTPID100 exited"
 			exit 0
 		fi
 
 		kill -0 $TESTPID5 > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
-			echo "pid %TESTPID exited"
+			echo "pid %TESTPID5 exited"
 			exit 0
 		fi
 
 		kill -0 $TESTPID1 > /dev/null 2>&1
 		if [ $? -ne 0 ]; then
-			echo "pid %TESTPID exited"
+			echo "pid %TESTPID1 exited"
 			exit 0
 		fi
 
