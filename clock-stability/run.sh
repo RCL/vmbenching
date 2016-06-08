@@ -11,7 +11,7 @@ CtrlCHandler()
 
 RunForever()
 {
-	./clock_stability 30 | tee stability.log &
+	./clock_stability 30 > >(tee stability.log) &
 	TESTPID=$!
 	taskset -c -p 5 $TESTPID
 
