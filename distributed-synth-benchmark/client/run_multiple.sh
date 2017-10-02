@@ -34,7 +34,8 @@ early_exit_graceful()
 	exit 0
 }
 
-if [ $? -ne 0 ]; then
+if [ $# -lt 1 ]; then
+	echo "Usage: ./run_multiple <num_instances> <server_ip>"
 	exit 1
 fi
 
@@ -48,9 +49,9 @@ run_test1() {
 	{
 		./ds_benchmark_client $server_ip &
 		pids[$i]=$!
-		taskset -p -c $((i-1)) ${pids[$i]}
+		#taskset -p -c $((i-1)) ${pids[$i]}
 		echo "watching pid ${pids[$i]} - instance #$i (pinned to core $((i-1)))"
-		sleep 5
+		#sleep 5
 	}
 
 	while true; do
